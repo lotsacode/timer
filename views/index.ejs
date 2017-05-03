@@ -1,0 +1,167 @@
+<html>
+<head>
+	<script src="/static/js/jquery-2.1.1.min.js"></script>
+	<style>
+		body {
+			font-family: sans-serif;
+			color: #404040;
+			font-size: 14px;
+		}
+		#main {
+			width: 500px;
+			margin-left: calc(50% - 250px);
+		}
+		#input {
+			margin-top: 20px;
+			width: 500px;
+			height: 50px;
+		}
+		#task {
+			font-size: 16px;
+			width: 369px;
+			height: 50px;
+			float: left;
+			padding: 10px;
+			padding-right: 0px;
+			outline: none;
+			font-weight: bold;
+			border: none;
+			color: #ff4040;
+			background: #f0f0f0;
+		}
+		#duration {
+			font-size: 16px;
+			width: 131px;
+			height: 50px;
+			border: none;
+			outline: none;
+			color: #a0a0a0;
+			font-weight: bold;
+			background: #f0f0f0;
+			cursor: pointer;
+		}
+		#go {
+			text-align: center;
+			margin-top: 10px;
+			width: 100%;
+			padding-top: 10px;
+			padding-bottom: 10px;
+			color: white;
+			font-weight: bold;
+			font-size: 26px;
+			background: #20cc20;
+			cursor: pointer;
+		}
+		#timer {
+			font-size: 160px;
+			margin-top: 20px;
+			text-align: center;
+		} 
+		
+		p {
+			color: #808080;
+			font-size: 14px;
+		}
+
+		#tick {
+			margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div id="main">
+		<div id="timer">15:00</div>
+
+		<p>
+			Does your brain like to wander off to Youtube and browse cat videos for hours? 
+			This website may help you beat procrastination.
+			Write down a task you're supposed to do and work on it for ~15 minutes.
+			After that a bell should ring and you can take a short break.
+		</p>	
+		<div id="input">
+			<input id="task" type="text" placeholder="I'm supposed to..." spellcheck="false"></input>
+			<select id="duration">
+			  <option value="5">for 5 seconds</option>
+			  <option value="600">for 10 minutes</option>
+			  <option value="900" selected>for 15 minutes</option>
+			  <option value="1800">for 30 minutes</option>
+			  <option value="3600">for 60 minutes</option>
+			</select>
+		</div>
+		<div id="go">Start</div>
+		<input type="checkbox" id="tick"><span style="color: #a0a0a0;">Disable tick sound</span></input>
+	</div>
+	<script>
+		function pad(n, width, z) {
+		  z = z || '0';
+		  n = n + '';
+		  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+		}
+		var bell = new Audio("/static/bell.wav");
+		var doit = new Audio("/static/do_it.wav");
+		var tick = new Audio("/static/tick.wav");
+		var duration = 15*60;
+		var running = false;
+		var interval = null;
+		var tickInterval = null;
+		$("#task").focus();
+		$("#go").click(function(e) {
+			if (running) {
+				running = false;
+				clearInterval(interval);
+				clearInterval(tickInterval)
+				$("#go").html("Start");
+				$("#go").css("background", "#20cc20");
+				var d = duration*1000;
+				var secs = Math.floor(d/(1000)) % 60;
+				var mins = Math.floor(d/(60*1000));
+				$("#timer").html(pad(mins, 2) + ":" + pad(secs, 2))
+			} else {
+				running = true;
+				doit.play();
+				var target = Date.now() + duration*1000;
+				interval = setInterval(function() {
+					var d = target - Date.now();
+					var secs = Math.floor(d/(1000)) % 60;
+					var mins = Math.floor(d/(60*1000));
+					$("#timer").html(pad(mins, 2) + ":" + pad(secs, 2));
+					if (mins == 0 && secs == 0) {
+						bell.play();
+						$("#go").html("Start");
+						$("#go").css("background", "#20cc20");
+						running = false;
+						var d = duration*1000;
+						var secs = Math.floor(d/(1000)) % 60;
+						var mins = Math.floor(d/(60*1000));
+						$("#timer").html(pad(mins, 2) + ":" + pad(secs, 2))
+						clearInterval(interval);
+						clearInterval(tickInterval)
+					}
+				}, 100);
+				tickInterval = setInterval(function() {
+					if (!$("#tick").is(':checked')) tick.play();
+				}, 1000)
+				$(this).html("Stop");
+				$(this).css("background", "#cccc20");
+			}
+		});
+		$("#duration" ).change(function() {
+			duration = parseInt($('#duration option:selected').val());
+			var d = duration*1000;
+			var secs = Math.floor(d/(1000)) % 60;
+			var mins = Math.floor(d/(60*1000));
+			$("#timer").html(pad(mins, 2) + ":" + pad(secs, 2))
+			$("#go").html("Start");
+			$("#go").css("background", "#20cc20");
+			clearInterval(interval);
+			clearInterval(tickInterval)
+			running = false;
+		});
+		$('body').on('keydown', function(e) {
+		    if (e.which == 13) {
+		        $("#go").click();
+		    }
+		});
+	</script>
+</body>
+</html>
